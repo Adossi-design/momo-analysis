@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MTN MoMo Transaction Dashboard</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>MTN MoMo Transaction Analysis</h1>
+            <p class="subtitle">Visualizing your mobile money transactions</p>
+        </header>
+
+        <section class="filters">
+            <div class="filter-group">
+                <label for="typeFilter">Transaction Type:</label>
+                <select id="typeFilter">
+                    <option value="">All Types</option>
+                    <option value="incoming">Incoming</option>
+                    <option value="payment">Payment</option>
+                    <option value="transfer">Transfer</option>
+                    <option value="deposit">Deposit</option>
+                    <option value="airtime">Airtime</option>
+                    <option value="cash_power">Cash Power</option>
+                    <option value="withdrawal">Withdrawal</option>
+                    <option value="bundle">Bundle</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="dateRange">Date Range:</label>
+                <div class="date-range">
+                    <input type="date" id="startDate" placeholder="Start Date">
+                    <span>to</span>
+                    <input type="date" id="endDate" placeholder="End Date">
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label for="amountRange">Amount Range:</label>
+                <div class="amount-range">
+                    <input type="number" id="minAmount" placeholder="Min">
+                    <span>to</span>
+                    <input type="number" id="maxAmount" placeholder="Max">
+                </div>
+            </div>
+
+            <div class="filter-actions">
+                <button id="applyFilters" class="btn primary">Apply Filters</button>
+                <button id="resetFilters" class="btn secondary">Reset</button>
+            </div>
+        </section>
+
+        <section class="dashboard">
+            <div class="summary-cards">
+                <div class="card">
+                    <h3>Transaction Types</h3>
+                    <div class="chart-container">
+                        <canvas id="typeChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Monthly Trends</h3>
+                    <div class="chart-container">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="transaction-details">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Transaction Details</h3>
+                        <div class="card-actions">
+                            <span id="transactionCount">0</span> transactions found
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table id="transactionsTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Amount (RWF)</th>
+                                    <th>Party</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionsBody">
+                                <!-- Transactions will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="table-footer">
+                        <div id="pagination"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
