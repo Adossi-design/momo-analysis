@@ -1,35 +1,28 @@
+#!/usr/bin/env python3
+import sys
 from backend.data_processing import parse_xml
 from backend.database import insert_transactions
 import logging
 
-logging.basicConfig(level=logging.INFO)
-
-def main(xml_file_path):
-    logging.info(f"Processing XML file: {xml_file_path}")
+def main(xml_file: str):
+    logging.info(f"Processing XML file: {xml_file}")
     
-    # Parse XML
-    transactions = parse_xml(xml_file_path)
+    transactions = parse_xml(xml_file)
     if not transactions:
-        logging.error("No transactions were processed")
+        logging.error("Failed to parse transactions from XML")
         return False
-    
-    logging.info(f"Successfully processed {len(transactions)} transactions")
-    
-    # Insert into database
-    logging.info("Inserting transactions into database...")
-    if insert_transactions(transactions):
-        logging.info("Data loading completed successfully")
-        return True
-    else:
-        logging.error("Data loading failed")
+        
+    if not insert_transactions(transactions):
+        logging.error("Failed to insert transactions into database")
         return False
+        
+    logging.info("Data processing completed successfully")
+    return True
 
 if __name__ == "__main__":
-    import sys
     if len(sys.argv) != 2:
         print("Usage: python process_data.py <path_to_xml_file>")
         sys.exit(1)
-    
-    xml_file = sys.argv[1]
-    if not main(xml_file):
+        
+    if not main(sys.argv[1]):
         sys.exit(1)
