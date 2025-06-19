@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoMo Transaction Dashboard</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <header>
+            <h1>MTN MoMo Transaction Dashboard</h1>
+            <div class="last-updated">
+                Last updated: <span id="update-time">{{ last_updated }}</span>
+                <button onclick="refreshData()">Refresh</button>
+            </div>
+        </header>
+
+        <div class="summary-cards">
+            <div class="card">
+                <h3>Total Transactions</h3>
+                <p class="big-number">{{ total_transactions }}</p>
+            </div>
+            
+            <div class="card">
+                <h3>This Month</h3>
+                <p class="big-number" id="current-month-total">Loading...</p>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="monthlyChart"></canvas>
+        </div>
+
+        <div class="recent-transactions">
+            <h2>Recent Transactions</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Amount (RWF)</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tx in recent_transactions %}
+                        <tr>
+                            <td>{{ tx['readable_date'] or tx['transaction_date'] }}</td>
+                            <td class="{{ tx['transaction_type'] }}">{{ tx['transaction_type'] }}</td>
+                            <td>{{ "{:,.0f}".format(tx['amount']) }}</td>
+                            <td>{{ tx['sender'] or tx['recipient'] or tx['message_body'][:30] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
