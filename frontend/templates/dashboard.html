@@ -10,13 +10,13 @@
 <body>
     <div class="dashboard-container">
         <header>
-            <h1>MTN MoMo Transaction Dashboard</h1>
+            <h1>MTN MoMo Transaction Analysis</h1>
             <div class="last-updated">
-                Last updated: <span id="update-time">{{ last_updated }}</span>
-                <button onclick="refreshData()">Refresh</button>
+                Data extracted from SMS history
             </div>
         </header>
 
+        <!-- Summary Cards -->
         <div class="summary-cards">
             <div class="card">
                 <h3>Total Transactions</h3>
@@ -24,18 +24,29 @@
             </div>
             
             <div class="card">
-                <h3>This Month</h3>
-                <p class="big-number" id="current-month-total">Loading...</p>
+                <h3>Current Month</h3>
+                <p class="big-number">{{ current_month.total|default(0)|int|format(',') }} RWF</p>
+                <p>{{ current_month.count|default(0) }} transactions</p>
             </div>
         </div>
 
-        <div class="chart-container">
-            <canvas id="monthlyChart"></canvas>
+        <!-- Analytics Section -->
+        <div class="analytics-section">
+            <div class="chart-container">
+                <h2>Monthly Transaction Volume</h2>
+                <canvas id="monthlyChart"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <h2>Transaction Type Distribution</h2>
+                <canvas id="typeChart"></canvas>
+            </div>
         </div>
 
-        <div class="recent-transactions">
-            <h2>Recent Transactions</h2>
-            <div class="table-container">
+        <!-- Transaction Details -->
+        <div class="transaction-details">
+            <div class="recent-transactions">
+                <h2>Recent Transactions</h2>
                 <table>
                     <thead>
                         <tr>
@@ -48,10 +59,34 @@
                     <tbody>
                         {% for tx in recent_transactions %}
                         <tr>
-                            <td>{{ tx['readable_date'] or tx['transaction_date'] }}</td>
-                            <td class="{{ tx['transaction_type'] }}">{{ tx['transaction_type'] }}</td>
-                            <td>{{ "{:,.0f}".format(tx['amount']) }}</td>
-                            <td>{{ tx['sender'] or tx['recipient'] or tx['message_body'][:30] }}</td>
+                            <td>{{ tx.readable_date or tx.transaction_date[:10] }}</td>
+                            <td class="tx-type-{{ tx.transaction_type }}">
+                                {{ tx.transaction_type }}
+                            </td>
+                            <td>{{ "{:,.0f}".format(tx.amount) }}</td>
+                            <td>{{ tx.sender or tx.recipient or tx.message_body[:30] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="type-breakdown">
+                <h2>Transaction Type Breakdown</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Count</th>
+                            <th>Total Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for type in type_stats %}
+                        <tr>
+                            <td class="tx-type-{{ type.type_name }}">{{ type.type_name }}</td>
+                            <td>{{ type.count }}</td>
+                            <td>{{ "{:,.0f}".format(type.total) }} RWF</td>
                         </tr>
                         {% endfor %}
                     </tbody>
