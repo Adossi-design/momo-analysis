@@ -10,9 +10,9 @@
 <body>
     <div class="dashboard-container">
         <header>
-            <h1>MTN MoMo Transaction Analysis</h1>
+            <h1>MTN MoMo Transaction Dashboard</h1>
             <div class="last-updated">
-                Data extracted from SMS history
+                Historical SMS Data Analysis
             </div>
         </header>
 
@@ -20,13 +20,24 @@
         <div class="summary-cards">
             <div class="card">
                 <h3>Total Transactions</h3>
-                <p class="big-number">{{ total_transactions }}</p>
+                <p class="big-number">{{ total_transactions|thousands }}</p>
             </div>
             
             <div class="card">
                 <h3>Current Month</h3>
-                <p class="big-number">{{ current_month.total|default(0)|int|format(',') }} RWF</p>
-                <p>{{ current_month.count|default(0) }} transactions</p>
+                <p class="big-number">{{ current_month.total|thousands }} RWF</p>
+                <p>{{ current_month.count|thousands }} transactions</p>
+            </div>
+            
+            <div class="card">
+                <h3>Average Transaction</h3>
+                <p class="big-number">
+                    {% if total_transactions > 0 %}
+                        {{ "{:,.0f}".format((current_month.total / current_month.count) if current_month.count > 0 else 0) }} RWF
+                    {% else %}
+                        0 RWF
+                    {% endif %}
+                </p>
             </div>
         </div>
 
@@ -47,28 +58,30 @@
         <div class="transaction-details">
             <div class="recent-transactions">
                 <h2>Recent Transactions</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Type</th>
-                            <th>Amount (RWF)</th>
-                            <th>Details</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for tx in recent_transactions %}
-                        <tr>
-                            <td>{{ tx.readable_date or tx.transaction_date[:10] }}</td>
-                            <td class="tx-type-{{ tx.transaction_type }}">
-                                {{ tx.transaction_type }}
-                            </td>
-                            <td>{{ "{:,.0f}".format(tx.amount) }}</td>
-                            <td>{{ tx.sender or tx.recipient or tx.message_body[:30] }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Amount (RWF)</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tx in recent_transactions %}
+                            <tr>
+                                <td>{{ tx.readable_date or tx.transaction_date[:10] }}</td>
+                                <td class="tx-type-{{ tx.transaction_type }}">
+                                    {{ tx.transaction_type|title }}
+                                </td>
+                                <td>{{ tx.amount|thousands }}</td>
+                                <td>{{ tx.sender or tx.recipient or tx.message_body[:30] + '...' if tx.message_body else 'N/A' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
             
             <div class="type-breakdown">
@@ -79,14 +92,22 @@
                             <th>Type</th>
                             <th>Count</th>
                             <th>Total Amount</th>
+                            <th>Percentage</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for type in type_stats %}
                         <tr>
-                            <td class="tx-type-{{ type.type_name }}">{{ type.type_name }}</td>
-                            <td>{{ type.count }}</td>
-                            <td>{{ "{:,.0f}".format(type.total) }} RWF</td>
+                            <td class="tx-type-{{ type.type_name }}">{{ type.type_name|title }}</td>
+                            <td>{{ type.count|thousands }}</td>
+                            <td>{{ type.total|thousands }} RWF</td>
+                            <td>
+                                {% if total_transactions > 0 %}
+                                    {{ "{:.1%}".format(type.total / current_month.total) if current_month.total > 0 else "0%" }}
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -96,5 +117,65 @@
     </div>
 
     <script src="/static/js/dashboard.js"></script>
+    
+    <script>
+        // Initialize Monthly Chart
+        const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+        new Chart(monthlyCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ monthly_stats|map(attribute='month')|tojson }},
+                datasets: [{
+                    label: 'Transaction Volume (RWF)',
+                    data: {{ monthly_stats|map(attribute='total')|tojson }},
+                    backgroundColor: '#FF6D00',
+                    borderColor: '#E65100',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString() + ' RWF';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Initialize Type Distribution Chart
+        const typeCtx = document.getElementById('typeChart').getContext('2d');
+        new Chart(typeCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ type_stats|map(attribute='type_name')|tojson }},
+                datasets: [{
+                    data: {{ type_stats|map(attribute='total')|tojson }},
+                    backgroundColor: [
+                        '#4CAF50', '#2196F3', '#FFC107',
+                        '#FF5722', '#9C27B0', '#607D8B'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.label}: ${context.raw.toLocaleString()} RWF`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 </html>
