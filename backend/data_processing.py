@@ -99,4 +99,3 @@ def parse_xml(xml_file):
     except Exception as e:
         logging.error(f"Error parsing XML: {e}")
         return []
-                ]
