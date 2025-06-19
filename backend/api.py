@@ -12,36 +12,40 @@ def create_app():
 
     # Configure logging
     logging.basicConfig(level=logging.INFO)
+
+    # Add custom filter for number formatting
+    @app.template_filter('thousands')
+    def format_thousands(value):
+        return "{:,.0f}".format(value)
     
     @app.route('/')
     def dashboard():
         """Main dashboard with server-side rendering"""
         stats = get_summary_stats()
         
-        # Get current month data
+        # Get current month data with proper defaults
         current_month = datetime.now().strftime('%Y-%m')
-        current_month_data = next(
-            (m for m in stats['monthly'] if m['month'] == current_month),
-            {'total': 0, 'count': 0}
-        )
+        current_month_data = {
+            'total': 0,
+            'count': 0
+        }
         
-        # Get recent transactions
-        recent_transactions = get_transactions(limit=10)
-        
-        # Prepare type statistics
-        type_stats = sorted(
-            stats['by_type'],
-            key=lambda x: x['total'],
-            reverse=True
-        )
-        
+        # Find matching month or use defaults
+        for month in stats['monthly']:
+            if month['month'] == current_month:
+                current_month_data = {
+                    'total': float(month['total']),
+                    'count': int(month['count'])
+                }
+                break
+                
         return render_template(
             'dashboard.html',
             total_transactions=stats['total_transactions'],
             current_month=current_month_data,
             monthly_stats=stats['monthly'],
-            type_stats=type_stats,
-            recent_transactions=recent_transactions
+            type_stats=sorted(stats['by_type'], key=lambda x: x['total'], reverse=True),
+            recent_transactions=get_transactions(limit=10)
         )
 
     @app.route('/api/transactions')
