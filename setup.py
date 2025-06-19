@@ -5,11 +5,14 @@ setup(
     version="0.1",
     packages=find_packages(),
     install_requires=[
-        # List your dependencies here or read from requirements.txt
-        'flask',
-        'waitress',
-        'pandas',
-        'lxml',
+        'Flask>=2.0.0',
+        'waitress>=2.0.0',
+        'lxml>=4.0.0'
     ],
-    python_requires='>=3.7',
+    python_requires='>=3.8',
+    entry_points={
+        'console_scripts': [
+            'momo-analysis=momo_analysis:main',
+        ],
+    },
 )
