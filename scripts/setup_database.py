@@ -1,4 +1,4 @@
-from backend/database import setup_database
+from backend\database import setup_database
 import logging
 
 logging.basicConfig(level=logging.INFO)
