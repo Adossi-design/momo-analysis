@@ -1,8 +1,9 @@
 import sqlite3
 import os
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import List, Dict, Any, Optional
 import logging
+from datetime import datetime
 
 # Configure logging
 logging.basicConfig(
@@ -129,10 +130,64 @@ def insert_transactions(transactions: List[Dict[str, Any]]) -> bool:
         return False
 
 def get_transaction_count() -> int:
-    """Get total number of transactions"""
+    """Get total number of transactions in database"""
     try:
         with Database() as cursor:
             return cursor.execute("SELECT COUNT(*) FROM transactions").fetchone()[0]
     except Exception as e:
-        logging.error(f"Failed to get transaction count: {e}")
+        logging.error(f"Error getting transaction count: {e}")
         return 0
+
+def get_transactions(limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
+    """
+    Retrieve paginated transactions from database
+    Args:
+        limit: Number of transactions to return
+        offset: Number of transactions to skip
+    Returns:
+        List of transaction dictionaries
+    """
+    try:
+        with Database() as cursor:
+            cursor.execute('''
+                SELECT * FROM transactions 
+                ORDER BY transaction_date DESC 
+                LIMIT ? OFFSET ?
+            ''', (limit, offset))
+            return [dict(row) for row in cursor.fetchall()]
+    except Exception as e:
+        logging.error(f"Error fetching transactions: {e}")
+        return []
+
+def get_summary_stats() -> Dict[str, Any]:
+    """Get summary statistics for dashboard"""
+    try:
+        with Database() as cursor:
+            # Transaction counts by type
+            cursor.execute('''
+            SELECT transaction_type, COUNT(*) as count, SUM(amount) as total 
+            FROM transactions 
+            GROUP BY transaction_type
+            ''')
+            by_type = [dict(row) for row in cursor.fetchall()]
+            
+            # Monthly summary
+            cursor.execute('''
+            SELECT strftime('%Y-%m', transaction_date) as month,
+                   COUNT(*) as count,
+                   SUM(amount) as total
+            FROM transactions
+            GROUP BY month
+            ORDER BY month
+            ''')
+            monthly = [dict(row) for row in cursor.fetchall()]
+            
+            return {
+                'by_type': by_type,
+                'monthly': monthly,
+                'total_transactions': get_transaction_count()
+            }
+            
+    except Exception as e:
+        logging.error(f"Error fetching summary stats: {e}")
+        return {}
