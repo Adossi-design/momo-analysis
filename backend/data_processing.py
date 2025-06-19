@@ -83,20 +83,20 @@ def process_sms(sms_element):
         return None
 
 def parse_xml(xml_file):
-    """Parse the XML file and return processed transactions"""
     try:
-        tree = ET.parse(xml_file)
-        root = tree.getroot()
-        
-        transactions = []
-        for sms in root.findall('sms'):
-            processed = process_sms(sms)
-            if processed:
-                transactions.append(processed)
-        
-        logging.info(f"Successfully processed {len(transactions)} transactions")
+        transactions = [
+            {
+                'date': item.find('date').text,
+                'type': item.find('type').text,
+                'amount': float(item.find('amount').text),
+                'recipient': item.find('recipient').text,
+                'sender': item.find('sender').text,
+                'body': item.find('body').text,
+                'readable_date': item.find('readable_date').text
+            }
+            for item in ET.parse(xml_file).findall('.//transaction')
+        ]
         return transactions
     except Exception as e:
-        logging.error(f"Error parsing XML: {e}")
-        return []
-                ]
+        logging.error(f"XML parsing failed: {str(e)}")
+        return None
