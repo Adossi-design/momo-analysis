@@ -1,16 +1,20 @@
-#!/usr/bin/env python3
+import sys
+from pathlib import Path
+
+# Add the project root to Python path
+sys.path.append(str(Path(__file__).parent.parent))
+
 from backend.database import initialize_database
 import logging
-import sys
+
+logging.basicConfig(level=logging.INFO)
 
 def main():
     logging.info("Starting database setup...")
     if initialize_database():
         logging.info("Database setup completed successfully")
-        sys.exit(0)
     else:
         logging.error("Database setup failed")
-        sys.exit(1)
 
 if __name__ == "__main__":
     main()
