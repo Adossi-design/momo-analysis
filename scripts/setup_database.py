@@ -1,7 +1,6 @@
 import sys
 from pathlib import Path
 
-# Add the project root to Python path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from backend.database import initialize_database
