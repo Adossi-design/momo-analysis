@@ -5,55 +5,42 @@ from pathlib import Path
 from datetime import datetime
 
 def create_app():
-    """Create and configure the Flask application"""
     app = Flask(__name__,
                template_folder=str(Path(__file__).parent.parent/'frontend'/'templates'),
                static_folder=str(Path(__file__).parent.parent/'frontend'/'static'))
 
-    # Configure logging
     logging.basicConfig(level=logging.INFO)
 
-    # Add custom filter for number formatting
     @app.template_filter('thousands')
     def format_thousands(value):
         return "{:,.0f}".format(value)
     
     @app.route('/')
     def dashboard():
-        """Main dashboard with server-side rendering"""
         stats = get_summary_stats()
+        monthly_stats = list(stats['monthly'])
+        type_stats = list(stats['by_type'])
         
-        # Get current month data with proper defaults
         current_month = datetime.now().strftime('%Y-%m')
-        current_month_data = {
-            'total': 0,
-            'count': 0
-        }
+        current_month_data = next(
+            (m for m in monthly_stats if m['month'] == current_month),
+            {'total': 0, 'count': 0}
+        )
         
-        # Find matching month or use defaults
-        for month in stats['monthly']:
-            if month['month'] == current_month:
-                current_month_data = {
-                    'total': float(month['total']),
-                    'count': int(month['count'])
-                }
-                break
-                
         return render_template(
             'dashboard.html',
             total_transactions=stats['total_transactions'],
             current_month=current_month_data,
-            monthly_stats=stats['monthly'],
-            type_stats=sorted(stats['by_type'], key=lambda x: x['total'], reverse=True),
-            recent_transactions=get_transactions(limit=10)
+            monthly_stats=monthly_stats,
+            type_stats=sorted(type_stats, key=lambda x: x['total'], reverse=True),
+            recent_transactions=list(get_transactions(limit=10))
         )
 
     @app.route('/api/transactions')
     def api_transactions():
-        """API endpoint for transactions"""
         try:
             limit = min(int(request.args.get('limit', 10)), 100)
-            transactions = get_transactions(limit=limit)
+            transactions = list(get_transactions(limit=limit))
             return jsonify({
                 'status': 'success',
                 'data': transactions,
@@ -64,11 +51,15 @@ def create_app():
 
     @app.route('/api/stats')
     def api_stats():
-        """API endpoint for statistics"""
         try:
+            stats = get_summary_stats()
             return jsonify({
                 'status': 'success',
-                'data': get_summary_stats()
+                'data': {
+                    'total': stats['total_transactions'],
+                    'by_type': list(stats['by_type']),
+                    'monthly': list(stats['monthly'])
+                }
             })
         except Exception as e:
             return jsonify({'status': 'error', 'message': str(e)}), 500
