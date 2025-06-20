@@ -4,7 +4,7 @@ import argparse
 import logging
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='MTN MoMo Transaction Analysis System')
+    parser = argparse.ArgumentParser(description='MTN MoMo Transaction Analysis')
     parser.add_argument('--port', type=int, default=5000)
     parser.add_argument('--host', default='0.0.0.0')
     parser.add_argument('--debug', action='store_true')
@@ -20,10 +20,8 @@ def main():
     )
 
     if args.debug:
-        logging.info("Running in debug mode")
         app.run(debug=True, host=args.host, port=args.port)
     else:
-        logging.info(f"Starting production server on {args.host}:{args.port}")
         serve(app, host=args.host, port=args.port)
 
 if __name__ == "__main__":
