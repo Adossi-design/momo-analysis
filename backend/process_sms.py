@@ -112,5 +112,5 @@ def process_xml(file_path):
         json.dump(records, f, indent=4)
 
 if __name__ == "__main__":
-    process_xml("DataWorld/Data/modified_sms_v2.xml")
+    process_xml("../DataWorld/Data/modified_sms_v2.xml")
 
