@@ -4,9 +4,10 @@ import json
 import logging
 from datetime import datetime
 
-# Logging for ignored messages
+# Logging for ignored or malformed SMS messages
 logging.basicConfig(filename='unprocessed_messages.log', level=logging.INFO)
 
+# Define known transaction patterns
 CATEGORIES = {
     "received": r"You have received (\d+) RWF from (.+?)\. Transaction ID: (\d+)\. Date: (.+?)\.",
     "payment": r"Your payment of (\d+) RWF to (.+?) has been completed\. Date: (.+?)\.",
@@ -94,7 +95,7 @@ def extract_fields(category, match):
 def format_date(raw_date):
     try:
         return datetime.strptime(raw_date.strip(), "%Y-%m-%d %H:%M:%S").isoformat()
-    except:
+    except Exception:
         return None
 
 def process_xml(file_path):
@@ -103,7 +104,12 @@ def process_xml(file_path):
     records = []
 
     for sms in root.findall('sms'):
-        body = sms.find('body').text.strip()
+        body_tag = sms.find('body')
+        if body_tag is None or body_tag.text is None:
+            logging.info("SMS with missing or empty <body> tag skipped.")
+            continue
+
+        body = body_tag.text.strip()
         parsed = parse_sms_body(body)
         if parsed:
             records.append(parsed)
@@ -111,6 +117,7 @@ def process_xml(file_path):
     with open('cleaned_data.json', 'w') as f:
         json.dump(records, f, indent=4)
 
+    print(f"✅ Processed {len(records)} valid messages.")
+
 if __name__ == "__main__":
     process_xml("../DataWorld/Data/modified_sms_v2.xml")
-
