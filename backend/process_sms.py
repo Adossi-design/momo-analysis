@@ -4,15 +4,15 @@ import json
 import logging
 from datetime import datetime
 
-# Logging for ignored or malformed SMS messages
+# Setup logging for unprocessed messages
 logging.basicConfig(filename='unprocessed_messages.log', level=logging.INFO)
 
-# Define known transaction patterns
+# Define regex categories for SMS classification
 CATEGORIES = {
     "received": r"You have received (\d+) RWF from (.+?)\. Transaction ID: (\d+)\. Date: (.+?)\.",
     "payment": r"Your payment of (\d+) RWF to (.+?) has been completed\. Date: (.+?)\.",
-    "airtime": r"\*162\*TxId:\d+\*S\*Your payment of (\d+) RWF to Airtime has been completed\. Fee: \d+ RWF\. Date: (.+?)\.",
-    "withdrawal": r"withdrawn (\d+) RWF on ([0-9\-: ]+)",
+    "airtime": r"Your payment of (\d+) RWF to Airtime .* completed .* Date: (.+?)\.",
+    "withdrawal": r"withdrawn (\d+) RWF .* on ([0-9\-: ]+)",
     "bundle": r"purchased an internet bundle of (.+?) for (\d+) RWF",
     "cashpower": r"Cash Power token .* worth (\d+) RWF",
     "bank": r"Bank transfer of (\d+) RWF .* Date: (.+?)\.",
@@ -104,15 +104,17 @@ def process_xml(file_path):
     records = []
 
     for sms in root.findall('sms'):
-        body_tag = sms.find('body')
-        if body_tag is None or body_tag.text is None:
-            logging.info("SMS with missing or empty <body> tag skipped.")
+        body = sms.attrib.get('body')
+        if body is None or body.strip() == "":
+            logging.info("SMS with missing or empty body attribute skipped.")
             continue
 
-        body = body_tag.text.strip()
+        body = body.strip()
         parsed = parse_sms_body(body)
         if parsed:
             records.append(parsed)
+        else:
+            logging.info(f"Unmatched SMS: {body}")
 
     with open('cleaned_data.json', 'w') as f:
         json.dump(records, f, indent=4)
