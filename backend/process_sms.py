@@ -111,6 +111,6 @@ def process_xml(file_path):
     with open('cleaned_data.json', 'w') as f:
         json.dump(records, f, indent=4)
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     process_xml("DataWorld/Data/modified_sms_v2.xml")
 
