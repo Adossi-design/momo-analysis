@@ -4,18 +4,15 @@ import json
 import logging
 from datetime import datetime
 
-# Setup logging for unprocessed messages
 logging.basicConfig(filename='unprocessed_messages.log', level=logging.INFO)
 
-# Define regex categories for SMS classification
+# Updated regex patterns based on your actual messages
 CATEGORIES = {
-    "received": r"You have received (\d+) RWF from (.+?)\. Transaction ID: (\d+)\. Date: (.+?)\.",
-    "payment": r"Your payment of (\d+) RWF to (.+?) has been completed\. Date: (.+?)\.",
-    "airtime": r"Your payment of (\d+) RWF to Airtime .* completed .* Date: (.+?)\.",
-    "withdrawal": r"withdrawn (\d+) RWF .* on ([0-9\-: ]+)",
-    "bundle": r"purchased an internet bundle of (.+?) for (\d+) RWF",
-    "cashpower": r"Cash Power token .* worth (\d+) RWF",
-    "bank": r"Bank transfer of (\d+) RWF .* Date: (.+?)\.",
+    "received": r"You have received (\d{1,3}(?:,\d{3})*|\d+) RWF from (.+?) \(.+?\) on your mobile money account at ([\d\-: ]+)",
+    "payment": r"Your payment of (\d{1,3}(?:,\d{3})*|\d+) RWF to (.+?) \d+ has been completed at ([\d\-: ]+)",
+    "airtime": r"Your payment of (\d{1,3}(?:,\d{3})|\d+) RWF to Airtime . completed .* at ([\d\-: ]+)",
+    "bank": r"bank deposit of (\d{1,3}(?:,\d{3})*|\d+) RWF has been added to your mobile money account at ([\d\-: ]+)",
+    "transfer": r"(\d{1,3}(?:,\d{3})|\d+) RWF transferred to (.+?) \(.?\) from .* at ([\d\-: ]+)",
 }
 
 def parse_sms_body(body):
@@ -28,19 +25,19 @@ def parse_sms_body(body):
 
 def extract_fields(category, match):
     if category == "received":
-        amount, sender, tx_id, date = match.groups()
+        amount, sender, date = match.groups()
         return {
             "type": "Incoming Money",
-            "amount": int(amount),
+            "amount": int(amount.replace(',', '')),
             "party": sender,
-            "tx_id": tx_id,
+            "tx_id": None,
             "date": format_date(date)
         }
     elif category == "payment":
         amount, receiver, date = match.groups()
         return {
             "type": "Payment",
-            "amount": int(amount),
+            "amount": int(amount.replace(',', '')),
             "party": receiver,
             "tx_id": None,
             "date": format_date(date)
@@ -49,44 +46,26 @@ def extract_fields(category, match):
         amount, date = match.groups()
         return {
             "type": "Airtime Purchase",
-            "amount": int(amount),
+            "amount": int(amount.replace(',', '')),
             "party": "Airtime",
             "tx_id": None,
             "date": format_date(date)
         }
-    elif category == "withdrawal":
-        amount, date = match.groups()
-        return {
-            "type": "Withdrawal",
-            "amount": int(amount),
-            "party": "Agent",
-            "tx_id": None,
-            "date": format_date(date)
-        }
-    elif category == "bundle":
-        bundle, amount = match.groups()
-        return {
-            "type": "Bundle Purchase",
-            "amount": int(amount),
-            "party": bundle,
-            "tx_id": None,
-            "date": None
-        }
-    elif category == "cashpower":
-        amount = match.group(1)
-        return {
-            "type": "Cash Power Payment",
-            "amount": int(amount),
-            "party": "Cash Power",
-            "tx_id": None,
-            "date": None
-        }
     elif category == "bank":
         amount, date = match.groups()
         return {
-            "type": "Bank Transfer",
-            "amount": int(amount),
+            "type": "Bank Deposit",
+            "amount": int(amount.replace(',', '')),
             "party": "Bank",
+            "tx_id": None,
+            "date": format_date(date)
+        }
+    elif category == "transfer":
+        amount, receiver, date = match.groups()
+        return {
+            "type": "Peer Transfer",
+            "amount": int(amount.replace(',', '')),
+            "party": receiver,
             "tx_id": None,
             "date": format_date(date)
         }
@@ -105,16 +84,12 @@ def process_xml(file_path):
 
     for sms in root.findall('sms'):
         body = sms.attrib.get('body')
-        if body is None or body.strip() == "":
-            logging.info("SMS with missing or empty body attribute skipped.")
+        if not body:
             continue
 
-        body = body.strip()
-        parsed = parse_sms_body(body)
+        parsed = parse_sms_body(body.strip())
         if parsed:
             records.append(parsed)
-        else:
-            logging.info(f"Unmatched SMS: {body}")
 
     with open('cleaned_data.json', 'w') as f:
         json.dump(records, f, indent=4)
@@ -122,4 +97,4 @@ def process_xml(file_path):
     print(f"Processed {len(records)} valid messages.")
 
 if __name__ == "__main__":
-    process_xml("../DataWorld/Data/modified_sms_v2.xml")
+    process_xml("../DataWorld/Data/modified_sms_v2.xml")i
