@@ -97,4 +97,4 @@ def process_xml(file_path):
     print(f"Processed {len(records)} valid messages.")
 
 if __name__ == "__main__":
-    process_xml("../DataWorld/Data/modified_sms_v2.xml")i
+    process_xml("../DataWorld/Data/modified_sms_v2.xml")
